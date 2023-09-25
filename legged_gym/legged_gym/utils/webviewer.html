@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <style>
+        html, body {
+            width: 100%; height: 100%;
+            margin: 0; overflow: hidden; display: block;
+            background-color: #000;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <canvas id="canvas" tabindex='1'></canvas>
+    </div>
+
+    <script>
+        var canvas, context, image;
+
+        function sendInputRequest(data){
+            let xmlRequest = new XMLHttpRequest();
+            xmlRequest.open("POST", "{{ url_for('_route_input_event') }}", true);
+            xmlRequest.setRequestHeader("Content-Type", "application/json");
+            xmlRequest.send(JSON.stringify(data));
+        }
+
+        window.onload = function(){
+            canvas = document.getElementById("canvas");
+            context = canvas.getContext('2d');
+            image = new Image();
+            image.src = "{{ url_for('_route_stream') }}";
+            image1 = new Image();
+            image1.src = "{{ url_for('_route_stream_depth') }}";
+
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            window.addEventListener('resize', function(){
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }, false);
+
+            window.setInterval(function(){
+                let ratio = image.naturalWidth / image.naturalHeight;
+                context.drawImage(image, 0, 0, canvas.width, canvas.width / ratio);
+                let imageHeight = canvas.width / ratio;
+                context.drawImage(image1, 0, imageHeight, canvas.width, canvas.width / image1.naturalWidth * image1.naturalHeight);
+            }, 50);
+
+            canvas.addEventListener('keydown', function(event){
+                if(event.keyCode != 18)
+                    sendInputRequest({key: event.keyCode});
+            }, false);
+
+            canvas.addEventListener('mousemove', function(event){
+                if(event.buttons){
+                    let data = {dx: event.movementX, dy: event.movementY};
+                    if(event.altKey && event.buttons == 1){
+                        data.key = 18;
+                        data.mouse = "left";
+                    }
+                    else if(event.buttons == 2)
+                        data.mouse = "right";
+                    else if(event.buttons == 4)
+                        data.mouse = "middle";
+                    else
+                        return;
+                    sendInputRequest(data);
+                }
+            }, false);
+
+            canvas.addEventListener('wheel', function(event){
+                sendInputRequest({mouse: "wheel", dz: Math.sign(event.deltaY)});
+            }, false);
+        }
+    </script>
+</body>
+</html>

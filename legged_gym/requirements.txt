@@ -1,0 +1,7 @@
+pymeshlab
+pydelatin
+tensorboard
+setuptools == 59.5.0
+opencv-python
+tqdm
+wandb
